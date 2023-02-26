@@ -5,7 +5,6 @@ import org.redisson.api.RedissonClient
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 
-
 class App {
     private fun redissonClient(): RedissonClient? { // TODO no nullable return value as in https://www.lotharschulz.info/2022/07/28/replace-null-with-amazing-kotlin-and-java-sealed-classes-interfaces/
         // connects to 127.0.0.1:6379 by default
@@ -18,13 +17,13 @@ class App {
         }
     }
 
-    private fun bucketSetGet(redissonClient: RedissonClient, bucketName: String, value: String){
+    private fun bucketSetGet(redissonClient: RedissonClient, bucketName: String, value: String) {
         val bucket = redissonClient.getBucket<String>(bucketName)
         bucket.set(value)
-        println( "bucket.get(): ${bucket.get()}" )
+        println("bucket.get(): ${bucket.get()}")
     }
 
-    fun doRedisStuff(): Boolean{
+    fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
         // keys
         // objects
@@ -43,13 +42,12 @@ class App {
             bucketSetGet(redissonNotNull, "foo", "bar") // buckets
             // close the client
             redissonNotNull.shutdown()
-            true;
+            true
         } catch (e: Exception) {
             println("can not connect to redis, please check if redis container is running")
             false
         }
     }
-
 }
 
 fun main() {
