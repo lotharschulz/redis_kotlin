@@ -1,6 +1,7 @@
 package redis_kotlin
 
 import org.redisson.Redisson
+import org.redisson.api.RKeys
 import org.redisson.api.RedissonClient
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
@@ -17,6 +18,11 @@ class App {
         }
     }
 
+    private fun keysSetGet(redissonClient: RedissonClient) {
+        val keys: RKeys = redissonClient.keys
+        println("keys: $keys")
+    }
+
     private fun bucketSetGet(redissonClient: RedissonClient, bucketName: String, value: String) {
         val bucket = redissonClient.getBucket<String>(bucketName)
         bucket.set(value)
@@ -25,7 +31,6 @@ class App {
 
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // keys
         // objects
         // AtomicLong
         // Topic
@@ -37,14 +42,14 @@ class App {
         // Services
         // Pipelining
         // Scripting
-        return try {
-            val redissonNotNull = checkNotNull(redisson) { "State must be set beforehand" }
+        val redissonNotNull = checkNotNull(redisson) { "State must be set beforehand" }
+        return if (redisson != null) {
             bucketSetGet(redissonNotNull, "foo", "bar") // buckets
+            keysSetGet(redisson) // keys
             // close the client
             redissonNotNull.shutdown()
             true
-        } catch (e: Exception) {
-            println("can not connect to redis, please check if redis container is running")
+        } else {
             false
         }
     }
