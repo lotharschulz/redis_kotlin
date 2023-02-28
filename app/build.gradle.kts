@@ -8,7 +8,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.redisson:redisson:3.17.4")
+    implementation("org.redisson:redisson:3.19.3")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.1")
