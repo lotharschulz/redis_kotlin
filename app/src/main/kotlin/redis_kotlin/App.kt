@@ -80,12 +80,11 @@ class App {
         // Services
         // Pipelining
         // Scripting
-        val redissonNotNull = checkNotNull(redisson) { "State must be set beforehand" }
         return if (redisson != null) {
             bucketGetSet(redisson, "foo", "bar") // buckets
             objectGetSet(redisson, 100, 10, "some author")
             keysSetGet(redisson, "test1", "test2")
-            redissonNotNull.shutdown()
+            redisson.shutdown()
             true
         } else {
             false
@@ -94,6 +93,5 @@ class App {
 }
 
 fun main() {
-    // make sure REDIS runs on local host first
     App().doRedisStuff()
 }
