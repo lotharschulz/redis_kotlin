@@ -4,6 +4,7 @@ import org.redisson.Redisson
 import org.redisson.api.*
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
+import reactor.core.publisher.Mono
 import java.io.Serializable
 
 
@@ -36,7 +37,7 @@ class App {
 
     private fun atomicLongAsync(redisson: RedissonClient, newValue: Long) {
         printHelper("atomicLong async interface")
-        val myAtomicLong: RAtomicLong = redisson.getAtomicLong("myAtomicLong")
+        val myAtomicLong: RAtomicLong = redisson.getAtomicLong("myAtomicLongAsync")
         println("initial myAtomicLong: $myAtomicLong")
         val setFuture: RFuture<Void> = myAtomicLong.setAsync(newValue)
         try {
@@ -76,15 +77,35 @@ class App {
 
     // todo: wrap into coroutines
 
-    // todo reactive interface
-    /*
-    RedissonReactiveClient redisson = redissonClient.reactive();
-    RAtomicLongReactive atomicLong = redisson.getAtomicLong("myAtomicLong");
+    private fun atomicLongReactive(redisson: RedissonClient, newValue: Long) {
+        printHelper("atomicLong reactive interface")
+        val redissonReactive: RedissonReactiveClient = redisson.reactive()
+        val myAtomicLong: RAtomicLongReactive = redissonReactive.getAtomicLong("myAtomicLongReactive")
 
-    Mono<Void> setMono = atomicLong.set(3);
-    Mono<Long> igMono = atomicLong.incrementAndGet();
-    RFuture<Long> getMono = atomicLong.getAsync();
-     */
+        val setMono: Mono<Void> = myAtomicLong.set(newValue)
+        setMono.doOnNext {i -> println("setMono next i: $i")}
+            .doOnSuccess{i -> println("setMono success i: $i")}
+            .doOnError{i -> println("setMono error i: $i")}
+            .block()
+
+        val getMono: Mono<Long> = myAtomicLong.get()
+        getMono.doOnNext {i -> println("getMono next i: $i")}
+            .doOnSuccess{i -> println("getMono success i: $i")}
+            .doOnError{i -> println("getMono error i: $i")}
+            .block();
+
+        val igMono: Mono<Long> = myAtomicLong.incrementAndGet()
+        igMono.doOnNext {i -> println("igMono next i: $i")}
+            .doOnSuccess{i -> println("igMono success i: $i")}
+            .doOnError{i -> println("igMono error i: $i")}
+            .block()
+
+        val getMono2: Mono<Long> = myAtomicLong.get()
+        getMono2.doOnNext {i -> println("getMono2 next i: $i")}
+            .doOnSuccess{i -> println("getMono2 success i: $i")}
+            .doOnError{i -> println("getMono2 error i: $i")}
+            .block();
+    }
 
     // todo RxJava3
     /*
@@ -157,12 +178,14 @@ class App {
         return if (redisson != null) {
             atomicLong(redisson, 3L)
             atomicLongAsync(redisson, 3L)
+            atomicLongReactive(redisson, 3L)
             bucket(redisson, "foo", "bar") // buckets
             `object`(redisson, 100, 10, "some author")
             keys(redisson, "test1", "test2")
             redisson.shutdown()
             true
         } else {
+            println("Could not connect to REDIS. Please check the connection and if it running.")
             false
         }
     }
