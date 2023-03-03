@@ -99,12 +99,6 @@ class App {
             .doOnSuccess{i -> println("igMono success i: $i")}
             .doOnError{i -> println("igMono error i: $i")}
             .block()
-
-        val getMono2: Mono<Long> = myAtomicLong.get()
-        getMono2.doOnNext {i -> println("getMono2 next i: $i")}
-            .doOnSuccess{i -> println("getMono2 success i: $i")}
-            .doOnError{i -> println("getMono2 error i: $i")}
-            .block();
     }
 
     // todo RxJava3
