@@ -101,7 +101,8 @@ class App {
             .block()
     }
 
-    // todo RxJava3
+    private fun atomicLongRXJava3(redisson: RedissonClient, newValue: Long) {
+        // TODO
     /*
     RedissonRxClient redisson = redissonClient.rxJava();
     RAtomicLongRx atomicLong = redisson.getAtomicLong("myAtomicLong");
@@ -110,6 +111,7 @@ class App {
     Single<Long> igMono = atomicLong.incrementAndGet();
     Single<Long> getMono = atomicLong.getAsync();
      */
+    }
 
     private fun bucket(redissonClient: RedissonClient, bucketName: String, value: String) {
         printHelper("bucket")
