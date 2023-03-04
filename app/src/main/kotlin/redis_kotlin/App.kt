@@ -1,5 +1,7 @@
 package redis_kotlin
 
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Single
 import org.redisson.Redisson
 import org.redisson.api.*
 import org.redisson.client.RedisConnectionException
@@ -85,32 +87,38 @@ class App {
         val setMono: Mono<Void> = myAtomicLong.set(newValue)
         setMono.doOnNext {i -> println("setMono next i: $i")}
             .doOnSuccess{i -> println("setMono success i: $i")}
-            .doOnError{i -> println("setMono error i: $i")}
+            .doOnError{e -> println("setMono error i: $e")}
             .block()
 
         val getMono: Mono<Long> = myAtomicLong.get()
         getMono.doOnNext {i -> println("getMono next i: $i")}
             .doOnSuccess{i -> println("getMono success i: $i")}
-            .doOnError{i -> println("getMono error i: $i")}
+            .doOnError{e -> println("getMono error i: $e")}
             .block();
 
         val igMono: Mono<Long> = myAtomicLong.incrementAndGet()
         igMono.doOnNext {i -> println("igMono next i: $i")}
             .doOnSuccess{i -> println("igMono success i: $i")}
-            .doOnError{i -> println("igMono error i: $i")}
+            .doOnError{e -> println("igMono error i: $e")}
             .block()
     }
 
     private fun atomicLongRXJava3(redisson: RedissonClient, newValue: Long) {
-        // TODO
-    /*
-    RedissonRxClient redisson = redissonClient.rxJava();
-    RAtomicLongRx atomicLong = redisson.getAtomicLong("myAtomicLong");
-
-    Completable setMono = atomicLong.set(3);
-    Single<Long> igMono = atomicLong.incrementAndGet();
-    Single<Long> getMono = atomicLong.getAsync();
-     */
+        printHelper("atomicLong RX Java3")
+        val redissonReactive: RedissonRxClient = redisson.rxJava()
+        val atomicLong: RAtomicLongRx = redissonReactive.getAtomicLong("myAtomicLongReactiveRX")
+        val setMono: Completable = atomicLong.set(newValue)
+        setMono.doOnError { e -> println("setMono error: $e") }
+        val getMono = atomicLong.get()
+        getMono.subscribe(
+            { i -> println("getMono: $i") },
+            { e -> println("getMono error: e.localizedMessage") }
+        )
+        val igMono: Single<Long> = atomicLong.incrementAndGet()
+        igMono.subscribe(
+            { i -> println("igMono: $i") },
+            { e -> println("igMono error: e.localizedMessage") }
+        )
     }
 
     private fun bucket(redissonClient: RedissonClient, bucketName: String, value: String) {
@@ -175,6 +183,7 @@ class App {
             atomicLong(redisson, 3L)
             atomicLongAsync(redisson, 3L)
             atomicLongReactive(redisson, 3L)
+            atomicLongRXJava3(redisson, 3L)
             bucket(redisson, "foo", "bar") // buckets
             `object`(redisson, 100, 10, "some author")
             keys(redisson, "test1", "test2")
