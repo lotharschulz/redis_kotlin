@@ -4,10 +4,15 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
 import org.redisson.Redisson
 import org.redisson.api.*
+import org.redisson.api.listener.MessageListener
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
+import java.util.concurrent.CountDownLatch
+
+
+
 
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
@@ -103,6 +108,7 @@ class App {
             .block()
     }
 
+    // check one more time
     private fun atomicLongRXJava3(redisson: RedissonClient, newValue: Long) {
         printHelper("atomicLong RX Java3")
         val redissonReactive: RedissonRxClient = redisson.rxJava()
@@ -163,13 +169,22 @@ class App {
         keys.sorted().forEach { println(it) }
     }
 
+    private fun topic(redissonClient: RedissonClient, message: String){
+        printHelper("topic")
+        val rTopic: RTopic = redissonClient.getTopic("myTopic")
+        val listenerId = rTopic.addListener(String::class.java) { channel, message ->
+            println("channel: $channel, Message: $message")
+        }
+        rTopic.publish(message)
+        rTopic.removeListener(listenerId)
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // AtomicLong
         // Topic
         // Collections
         // Map
@@ -186,6 +201,7 @@ class App {
             atomicLongRXJava3(redisson, 3L)
             bucket(redisson, "foo", "bar") // buckets
             `object`(redisson, 100, 10, "some author")
+            topic(redisson, "new message")
             keys(redisson, "test1", "test2")
             redisson.shutdown()
             true
