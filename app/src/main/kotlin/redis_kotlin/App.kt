@@ -4,15 +4,10 @@ import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
 import org.redisson.Redisson
 import org.redisson.api.*
-import org.redisson.api.listener.MessageListener
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
-import java.util.concurrent.CountDownLatch
-
-
-
 
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
@@ -179,14 +174,34 @@ class App {
         rTopic.removeListener(listenerId)
     }
 
+    private fun collections(redissonClient: RedissonClient, key: String, value: String){
+        printHelper("collections")
+        // Map
+        val map: RMap<String, String> = redissonClient.getMap("myMap")
+        val prevString: String? = map.put(key, value)
+        println("prevString: $prevString")
+        println("map get: ${map[key]}")
+        val putIfAbsentStringValue: String = "42"
+        println("before putIfAbsent value: $putIfAbsentStringValue")
+        val putIfAbsentString: String? = map.putIfAbsent(key, putIfAbsentStringValue)
+        println("after putIfAbsentString: $putIfAbsentString")
+        println("map get: ${map[key]}")
+        val removedString: String? = map.remove(key)
+        println("removedString: $removedString")
+        println("map get: ${map[key]}")
+        // distributed collections also include
+        // Map, Multimap, Set, SortedSet, ScoredSortedSet, LexSortedSet, List
+        // Queue, Deque, BlockingQueue, BoundedBlockingQueue, BlockingDeque
+        // BlockingFairQueue, DelayedQueue, PriorityQueue, PriorityDeque
+        // https://github.com/redisson/redisson/wiki/7.-distributed-collections
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // Topic
-        // Collections
         // Map
         // Set
         // List
@@ -203,6 +218,7 @@ class App {
             `object`(redisson, 100, 10, "some author")
             topic(redisson, "new message")
             keys(redisson, "test1", "test2")
+            collections(redisson, "321", "value")
             redisson.shutdown()
             true
         } else {
