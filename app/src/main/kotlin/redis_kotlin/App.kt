@@ -196,13 +196,24 @@ class App {
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections
     }
 
+    private fun set(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String){
+        printHelper("set")
+        val book = Book(pages, chapter, author)
+        val rSet: RSet<Book> = redissonClient.getSet("book-set")
+        rSet.add(book)
+        val setData = rSet.readAll()
+        println( "book set contains $book: ${rSet.contains(book)}" )
+        rSet.remove(book)
+        // more on distributed collection set
+        // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#73-set
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // Map
         // Set
         // List
         // Multi(Lock)
@@ -219,6 +230,7 @@ class App {
             topic(redisson, "new message")
             keys(redisson, "test1", "test2")
             collections(redisson, "321", "value")
+            set(redisson, 42, 88, "icke")
             redisson.shutdown()
             true
         } else {
