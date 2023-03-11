@@ -209,10 +209,16 @@ class App {
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#73-set
     }
 
-    private fun list(redissonClient: RedissonClient){
-        printHelper("set")
-        val ledgerList: RList<String> = redissonClient.getList("myList")
-        ledgerList.add(Ledger())
+    private fun list(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String){
+        printHelper("list")
+        val book = Book(pages, chapter, author)
+        val ledgerList: RList<Book> = redissonClient.getList("myList")
+        ledgerList.add(book)
+        val listData = ledgerList.get(0)
+        println(listData)
+        ledgerList.remove(book)
+        // more on distributed collection list
+        // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#77-list
     }
 
     private fun printHelper(content: String) {
@@ -237,6 +243,7 @@ class App {
             keys(redisson, "test1", "test2")
             collections(redisson, "321", "value")
             set(redisson, 42, 88, "icke")
+            list(redisson, 24, 33, "you")
             redisson.shutdown()
             true
         } else {
