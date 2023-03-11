@@ -190,10 +190,11 @@ class App {
         println("removedString: $removedString")
         println("map get: ${map[key]}")
         // distributed collections also include
-        // Map, Multimap, Set, SortedSet, ScoredSortedSet, LexSortedSet, List
+        // Map, Multimap, SortedSet, ScoredSortedSet, LexSortedSet
         // Queue, Deque, BlockingQueue, BoundedBlockingQueue, BlockingDeque
         // BlockingFairQueue, DelayedQueue, PriorityQueue, PriorityDeque
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections
+        // down below Set & List
     }
 
     private fun set(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String){
@@ -208,13 +209,18 @@ class App {
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#73-set
     }
 
+    private fun list(redissonClient: RedissonClient){
+        printHelper("set")
+        val ledgerList: RList<String> = redissonClient.getList("myList")
+        ledgerList.add(Ledger())
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // Set
         // List
         // Multi(Lock)
         // Services
