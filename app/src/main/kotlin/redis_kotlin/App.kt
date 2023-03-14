@@ -221,6 +221,17 @@ class App {
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#77-list
     }
 
+    private fun scripting(redissonClient: RedissonClient, value: String){
+        printHelper("list")
+        val bucketName = "myScriptingBucket"
+        redissonClient.getBucket<String>(bucketName).set(value)
+        val result: String = redissonClient.script.eval(
+            RScript.Mode.READ_ONLY,
+            "return redis.call('get', '$bucketName')", RScript.ReturnType.VALUE
+        )
+        println(result)
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
@@ -231,7 +242,6 @@ class App {
         // Multi(Lock)
         // Services
         // Pipelining
-        // Scripting
         return if (redisson != null) {
             atomicLong(redisson, 3L)
             atomicLongAsync(redisson, 3L)
@@ -244,6 +254,7 @@ class App {
             collections(redisson, "321", "value")
             set(redisson, 42, 88, "icke")
             list(redisson, 24, 33, "you")
+            scripting(redisson, "foo-bar")
             redisson.shutdown()
             true
         } else {
