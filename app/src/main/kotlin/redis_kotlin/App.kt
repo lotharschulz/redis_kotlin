@@ -87,19 +87,19 @@ class App {
         val setMono: Mono<Void> = myAtomicLong.set(newValue)
         setMono.doOnNext {i -> println("setMono next i: $i")}
             .doOnSuccess{i -> println("setMono success i: $i")}
-            .doOnError{e -> println("setMono error i: $e")}
+            .doOnError{e -> println("setMono error i: ${e.localizedMessage}")}
             .block()
 
         val getMono: Mono<Long> = myAtomicLong.get()
         getMono.doOnNext {i -> println("getMono next i: $i")}
             .doOnSuccess{i -> println("getMono success i: $i")}
-            .doOnError{e -> println("getMono error i: $e")}
+            .doOnError{e -> println("getMono error i: ${e.localizedMessage}")}
             .block();
 
         val igMono: Mono<Long> = myAtomicLong.incrementAndGet()
         igMono.doOnNext {i -> println("igMono next i: $i")}
             .doOnSuccess{i -> println("igMono success i: $i")}
-            .doOnError{e -> println("igMono error i: $e")}
+            .doOnError{e -> println("igMono error i: ${e.localizedMessage}")}
             .block()
     }
 
@@ -109,16 +109,16 @@ class App {
         val redissonReactive: RedissonRxClient = redisson.rxJava()
         val atomicLong: RAtomicLongRx = redissonReactive.getAtomicLong("myAtomicLongReactiveRX")
         val setMono: Completable = atomicLong.set(newValue)
-        setMono.doOnError { e -> println("setMono error: $e") }
+        setMono.doOnError { e -> println("setMono error: ${e.localizedMessage}") }
         val getMono = atomicLong.get()
         getMono.subscribe(
             { i -> println("getMono: $i") },
-            { e -> println("getMono error: e.localizedMessage") }
+            { e -> println("getMono error: ${e.localizedMessage}") }
         )
         val igMono: Single<Long> = atomicLong.incrementAndGet()
         igMono.subscribe(
             { i -> println("igMono: $i") },
-            { e -> println("igMono error: e.localizedMessage") }
+            { e -> println("igMono error: ${e.localizedMessage}") }
         )
     }
 
