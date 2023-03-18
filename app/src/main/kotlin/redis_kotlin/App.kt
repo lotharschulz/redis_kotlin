@@ -167,8 +167,8 @@ class App {
     private fun topic(redissonClient: RedissonClient, message: String){
         printHelper("topic")
         val rTopic: RTopic = redissonClient.getTopic("myTopic")
-        val listenerId = rTopic.addListener(String::class.java) { channel, message ->
-            println("channel: $channel, Message: $message")
+        val listenerId = rTopic.addListener(String::class.java) { channel, msg ->
+            println("channel: $channel, Message: $msg")
         }
         rTopic.publish(message)
         rTopic.removeListener(listenerId)
@@ -202,7 +202,7 @@ class App {
         val book = Book(pages, chapter, author)
         val rSet: RSet<Book> = redissonClient.getSet("book-set")
         rSet.add(book)
-        val setData = rSet.readAll()
+        rSet.readAll()
         println( "book set contains $book: ${rSet.contains(book)}" )
         rSet.remove(book)
         // more on distributed collection set
