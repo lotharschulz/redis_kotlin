@@ -222,7 +222,7 @@ class App {
     }
 
     private fun scripting(redissonClient: RedissonClient, value: String){
-        printHelper("list")
+        printHelper("scripting")
         val bucketName = "myScriptingBucket"
         redissonClient.getBucket<String>(bucketName).set(value)
         val result: String = redissonClient.script.eval(
@@ -230,6 +230,16 @@ class App {
             "return redis.call('get', '$bucketName')", RScript.ReturnType.VALUE
         )
         println(result)
+    }
+
+    private fun pipeline(redissonClient: RedissonClient, value1: Int, value2: Int, value3: Int, value4: Int){
+        printHelper("pipeline")
+        val batch: RBatch = redissonClient.createBatch()
+        val rf1: RFuture<Boolean>? = batch.getMap<Int, Int>("pipeline").fastPutAsync(value1, value2)
+        val rf2: RFuture<Int>? = batch.getMap<Int, Int>("pipeline").putAsync(value3, value4)
+        batch.execute()
+        rf1?.toCompletableFuture()?.thenApply { println("rf1 fastPutAsync result: $it") }
+        rf2?.toCompletableFuture()?.thenApply { println("rf2 putAsync result: $it") }
     }
 
     private fun printHelper(content: String) {
@@ -255,6 +265,7 @@ class App {
             set(redisson, 42, 88, "icke")
             list(redisson, 24, 33, "you")
             scripting(redisson, "foo-bar")
+            pipeline(redisson, 1, 2, 3, 4)
             redisson.shutdown()
             true
         } else {
