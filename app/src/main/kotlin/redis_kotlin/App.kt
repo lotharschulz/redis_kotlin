@@ -3,6 +3,7 @@ package redis_kotlin
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
 import org.redisson.Redisson
+import org.redisson.RedissonMultiLock
 import org.redisson.api.*
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
@@ -242,6 +243,20 @@ class App {
         rf2?.toCompletableFuture()?.thenApply { println("rf2 putAsync result: $it") }
     }
 
+    private fun multiLock(redissonClient: RedissonClient){
+        val lock1: RLock = redissonClient.getLock("l1")
+        val lock2: RLock = redissonClient.getLock("l2")
+        val lock3: RLock = redissonClient.getLock("l3")
+        val lock4: RLock = redissonClient.getLock("l4")
+        val lock5: RLock = redissonClient.getLock("l5")
+
+        val lock = RedissonMultiLock(lock1, lock2, lock3, lock4, lock5)
+        lock.lock()
+        // perform 1 second "long" running operation...
+        Thread.sleep(1000)
+        lock.unlock()
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
@@ -265,6 +280,7 @@ class App {
             list(redisson, 24, 33, "you")
             scripting(redisson, "foo-bar")
             pipeline(redisson, 1, 2, 3, 4)
+            `multi lock`(redisson)
             redisson.shutdown()
             true
         } else {
