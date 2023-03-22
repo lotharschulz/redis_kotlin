@@ -248,7 +248,6 @@ class App {
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // List
         // Multi(Lock)
         // Services
         // Pipelining
