@@ -244,6 +244,7 @@ class App {
     }
 
     private fun multiLock(redissonClient: RedissonClient){
+        printHelper("multiLock")
         val lock1: RLock = redissonClient.getLock("l1")
         val lock2: RLock = redissonClient.getLock("l2")
         val lock3: RLock = redissonClient.getLock("l3")
@@ -252,9 +253,12 @@ class App {
 
         val lock = RedissonMultiLock(lock1, lock2, lock3, lock4, lock5)
         lock.lock()
+        println("locked")
         // perform 1 second "long" running operation...
+        println("wait")
         Thread.sleep(1000)
         lock.unlock()
+        println("unlocked")
     }
 
     private fun printHelper(content: String) {
@@ -280,7 +284,7 @@ class App {
             list(redisson, 24, 33, "you")
             scripting(redisson, "foo-bar")
             pipeline(redisson, 1, 2, 3, 4)
-            `multi lock`(redisson)
+            multiLock(redisson)
             redisson.shutdown()
             true
         } else {
