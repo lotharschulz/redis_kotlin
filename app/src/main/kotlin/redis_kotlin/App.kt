@@ -12,6 +12,17 @@ import java.io.Serializable
 
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
+
+interface MyTestInterface {
+    fun doubleStr(input: String): String
+}
+
+class MyTestImpl : MyTestInterface {
+    override fun doubleStr(input: String): String {
+        return "$input-$input"
+    }
+}
+
 class App {
     private fun redissonClient(): RedissonClient? { // TODO no nullable return value as in https://www.lotharschulz.info/2022/07/28/replace-null-with-amazing-kotlin-and-java-sealed-classes-interfaces/
         // connects to 127.0.0.1:6379 by default
@@ -261,13 +272,28 @@ class App {
         println("unlocked")
     }
 
+    private fun remoteServiceServer(redissonClient: RedissonClient){
+        val remoteService: RRemoteService = redissonClient.remoteService
+        val myTestImpl = MyTestImpl()
+
+        // register remote service before any remote invocation
+        // can handle only 1 invocation concurrently
+
+        // register remote service before any remote invocation
+        // can handle only 1 invocation concurrently
+        remoteService.register(MyTestInterface::class.java, myTestImpl)
+
+        // register remote service able to handle up to 12 invocations concurrently
+        // register remote service able to handle up to 12 invocations concurrently
+        remoteService.register(MyTestInterface::class.java, myTestImpl, 12)
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // Multi(Lock)
         // Services
         // Pipelining
         return if (redisson != null) {
