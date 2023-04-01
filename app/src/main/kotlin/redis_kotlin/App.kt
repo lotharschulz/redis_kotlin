@@ -284,6 +284,12 @@ class App {
         remoteService.register(MyTestInterface::class.java, myTestImpl, 12)
     }
 
+    private fun remoteServiceClient(redissonClient: RedissonClient){
+        val remoteService: RRemoteService = redissonClient.getRemoteService()
+        val myTest: MyTestInterface = remoteService.get(MyTestInterface::class.java)
+        val value: String = myTest.doubleStr("foo")
+    }
+
     private fun printHelper(content: String) {
         println("------------------------------")
         println("--- $content function output: ")
