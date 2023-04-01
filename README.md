@@ -1,27 +1,24 @@
-https://redis.io/docs/stack/get-started/install/docker/
+# How to Redis & Redisson with Kotlin
 
-run the code
-
-_precondition_: redis docker container running (see below)
-
-```shell
-./gradlew run
-```
-
-
-run docker redis container: 
+### start redis with docker
 
 ```shell
 docker run -d --name my-redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 ```
 
-Connect with redis-cli:
+optional: connect with redis-cli:
 
 ```shell
 docker exec -it my-redis-stack redis-cli
 ```
 
-stop docker redis container
+### run the code
+
+```shell
+./gradlew run
+```
+
+### stop redis with docker
 
 ```shell
 docker stop my-redis-stack && docker rm my-redis-stack
