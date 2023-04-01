@@ -284,7 +284,6 @@ class App {
         remoteService.register(MyTestInterface::class.java, myTestImpl)
 
         // register remote service able to handle up to 12 invocations concurrently
-        // register remote service able to handle up to 12 invocations concurrently
         remoteService.register(MyTestInterface::class.java, myTestImpl, 12)
     }
 
@@ -294,8 +293,6 @@ class App {
     }
     fun doRedisStuff(): Boolean {
         val redisson = redissonClient()
-        // Services
-        // Pipelining
         return if (redisson != null) {
             atomicLong(redisson, 3L)
             atomicLongAsync(redisson, 3L)
