@@ -278,9 +278,6 @@ class App {
 
         // register remote service before any remote invocation
         // can handle only 1 invocation concurrently
-
-        // register remote service before any remote invocation
-        // can handle only 1 invocation concurrently
         remoteService.register(MyTestInterface::class.java, myTestImpl)
 
         // register remote service able to handle up to 12 invocations concurrently
