@@ -23,3 +23,5 @@ docker exec -it my-redis-stack redis-cli
 ```shell
 docker stop my-redis-stack && docker rm my-redis-stack
 ```
+
+TODO: docs

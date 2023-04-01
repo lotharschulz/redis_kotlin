@@ -288,6 +288,7 @@ class App {
         val remoteService: RRemoteService = redissonClient.getRemoteService()
         val myTest: MyTestInterface = remoteService.get(MyTestInterface::class.java)
         val value: String = myTest.doubleStr("foo")
+        println("value: $value")
     }
 
     private fun printHelper(content: String) {
