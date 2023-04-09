@@ -2,13 +2,16 @@ package redis_kotlin
 
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
+import org.redisson.api.RMapCache
 import org.redisson.Redisson
+import org.redisson.RedissonMapCache
 import org.redisson.RedissonMultiLock
 import org.redisson.api.*
 import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
+import java.util.concurrent.TimeUnit
 
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
@@ -270,6 +273,13 @@ class App {
         Thread.sleep(1000)
         lock.unlock()
         println("unlocked")
+    }
+
+    private fun mapCache(redissonClient: RedissonClient, key: String, value: String,
+                         expiration: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS){
+        printHelper("mapCache")
+        val mapCache: RMapCache<Any, Any> = RedissonMapCache<Any,Any>("test", "test")
+        mapCache.fastPut(key, value, expiration, timeUnit)
     }
 
     private fun remoteServiceServer(redissonClient: RedissonClient){
