@@ -2,9 +2,7 @@ package redis_kotlin
 
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
-import org.redisson.api.RMapCache
 import org.redisson.Redisson
-import org.redisson.RedissonMapCache
 import org.redisson.RedissonMultiLock
 import org.redisson.api.*
 import org.redisson.client.RedisConnectionException
@@ -275,11 +273,21 @@ class App {
         println("unlocked")
     }
 
-    private fun mapCache(redissonClient: RedissonClient, key: String, value: String,
-                         expiration: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS){
+    private fun mapCache(redissonClient: RedissonClient, mapCacheName:String,
+                         key: String, value: String, expirationInMillis: Long){
         printHelper("mapCache")
-        val mapCache: RMapCache<Any, Any> = RedissonMapCache<Any,Any>("test", "test")
-        mapCache.fastPut(key, value, expiration, timeUnit)
+        val offset = expirationInMillis + 10000
+        val mapCache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName) // "testMapCache"
+        mapCache.fastPut(key, value, expirationInMillis, TimeUnit.MILLISECONDS)
+        val remainingTTL = mapCache.remainTimeToLive(key)
+        println("remainingTTL: $remainingTTL")
+        val mapCacheValue = mapCache[key]
+        println("mapCacheValue: $mapCacheValue")
+        println("before sleep")
+        Thread.sleep(offset)
+        println("waited for $offset millis")
+        println("remainingTTL: $remainingTTL")
+        println("mapCacheValue: $mapCacheValue")
     }
 
     private fun remoteServiceServer(redissonClient: RedissonClient){
@@ -322,6 +330,7 @@ class App {
             scripting(redisson, "foo-bar")
             pipeline(redisson, 1, 2, 3, 4)
             multiLock(redisson)
+            mapCache(redisson, "testMapCache", "mapCacheKey", "map cache test value", 3000L)
             redisson.shutdown()
             true
         } else {
