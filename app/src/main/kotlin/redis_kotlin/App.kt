@@ -288,6 +288,8 @@ class App {
         println("waited for $offset millis")
         println("remainingTTL: $remainingTTL")
         println("mapCacheValue: $mapCacheValue")
+        println("mapCacheValue?.length: ${mapCacheValue?.length}")
+        println("mapCacheValue: $mapCacheValue")
     }
 
     private fun remoteServiceServer(redissonClient: RedissonClient){
