@@ -278,7 +278,8 @@ class App {
         printHelper("mapCache")
         val offset = expirationInMillis + 10000
         val mapCache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName) // "testMapCache"
-        mapCache.fastPut(key, value, expirationInMillis, TimeUnit.MILLISECONDS)
+//        mapCache.fastPut(key, value, expirationInMillis, TimeUnit.MILLISECONDS)
+        mapCache.put(key, value, offset, TimeUnit.MILLISECONDS)
         val remainingTTL = mapCache.remainTimeToLive(key)
         println("remainingTTL: $remainingTTL")
         val mapCacheValue = mapCache[key]
