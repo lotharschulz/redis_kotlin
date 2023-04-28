@@ -9,6 +9,7 @@ import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
+import java.time.Duration;
 import java.util.concurrent.TimeUnit
 
 
@@ -276,19 +277,16 @@ class App {
     private fun mapCache(redissonClient: RedissonClient, mapCacheName:String,
                          key: String, value: String, expirationInMillis: Long){
         printHelper("mapCache")
-        val offset = expirationInMillis + 10000
-        val mapCache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName) // "testMapCache"
-//        mapCache.fastPut(key, value, expirationInMillis, TimeUnit.MILLISECONDS)
-        mapCache.put(key, value, offset, TimeUnit.MILLISECONDS)
-        val remainingTTL = mapCache.remainTimeToLive(key)
-        println("remainingTTL: $remainingTTL")
-        val mapCacheValue = mapCache[key]
-        println("mapCacheValue: $mapCacheValue")
-        println("before sleep")
+        val offset = expirationInMillis + 500
+        val cache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName)
+        cache.put(key, value)
+        println("cache[$key]: '${cache.get(key)}'")
+        cache.expire(Duration.ofMillis(expirationInMillis))
+        println("expire '${cache.get(key)}' after $expirationInMillis milli seconds")
         Thread.sleep(offset)
-        println("waited for $offset millis")
-        println("remainingTTL: $remainingTTL")
-        println("mapCacheValue: $mapCacheValue")
+        println("$offset milli seconds have been passed")
+        println("cache.size: ${cache.size} (0 means cache is expired)")
+        cache.destroy();
     }
 
     private fun remoteServiceServer(redissonClient: RedissonClient){
@@ -331,7 +329,7 @@ class App {
             scripting(redisson, "foo-bar")
             pipeline(redisson, 1, 2, 3, 4)
             multiLock(redisson)
-            mapCache(redisson, "testMapCache", "mapCacheKey", "map cache test value", 3000L)
+            mapCache(redisson, "cache", "cacheKey", "cache test value", 1000L)
             redisson.shutdown()
             true
         } else {
