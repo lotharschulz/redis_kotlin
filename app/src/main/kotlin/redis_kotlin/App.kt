@@ -9,6 +9,8 @@ import org.redisson.client.RedisConnectionException
 import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
+import java.time.Duration;
+import java.util.concurrent.TimeUnit
 
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
@@ -272,6 +274,21 @@ class App {
         println("unlocked")
     }
 
+    private fun mapCache(redissonClient: RedissonClient, mapCacheName:String,
+                         key: String, value: String, expirationInMillis: Long){
+        printHelper("mapCache")
+        val offset = expirationInMillis + 500
+        val cache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName)
+        cache.put(key, value)
+        println("cache[$key]: '${cache.get(key)}'")
+        cache.expire(Duration.ofMillis(expirationInMillis))
+        println("expire '${cache.get(key)}' after $expirationInMillis milli seconds")
+        Thread.sleep(offset)
+        println("$offset milli seconds have been passed")
+        println("cache.size: ${cache.size} (0 means cache is expired)")
+        cache.destroy();
+    }
+
     private fun remoteServiceServer(redissonClient: RedissonClient){
         val remoteService: RRemoteService = redissonClient.remoteService
         val myTestImpl = MyTestImpl()
@@ -312,6 +329,7 @@ class App {
             scripting(redisson, "foo-bar")
             pipeline(redisson, 1, 2, 3, 4)
             multiLock(redisson)
+            mapCache(redisson, "cache", "cacheKey", "cache test value", 1000L)
             redisson.shutdown()
             true
         } else {
