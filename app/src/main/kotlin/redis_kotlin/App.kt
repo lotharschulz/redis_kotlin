@@ -117,7 +117,7 @@ class App {
             .block()
     }
 
-    // check one more time
+
     private fun atomicLongRXJava3(redisson: RedissonClient, newValue: Long) {
         printHelper("atomicLong RX Java3")
         val redissonReactive: RedissonRxClient = redisson.rxJava()
