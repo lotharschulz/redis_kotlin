@@ -319,6 +319,7 @@ class App {
             atomicLongAsync(redisson, 3L)
             atomicLongReactive(redisson, 3L)
             atomicLongRXJava3(redisson, 3L)
+            Thread.sleep(1000) // wait for 1 second to complete RX operations
             bucket(redisson, "foo", "bar") // buckets
             `object`(redisson, 100, 10, "some author")
             topic(redisson, "new message")
