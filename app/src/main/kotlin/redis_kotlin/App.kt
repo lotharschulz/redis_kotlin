@@ -26,14 +26,14 @@ class MyTestImpl : MyTestInterface {
 }
 
 class App {
-    private fun redissonClient(): RedissonClient? { // TODO no nullable return value as in https://www.lotharschulz.info/2022/07/28/replace-null-with-amazing-kotlin-and-java-sealed-classes-interfaces/
+    private fun redissonClient(): RClient {
         // connects to 127.0.0.1:6379 by default
         val config = Config()
         config.useSingleServer().address = "redis://localhost:6379" // in case you need to set it
         return try {
-            Redisson.create(config)
+            RClient.Success(Redisson.create(config))
         } catch (rce: RedisConnectionException) {
-            null
+            RClient.Failure(rce.localizedMessage)
         }
     }
 
@@ -99,21 +99,21 @@ class App {
         val myAtomicLong: RAtomicLongReactive = redissonReactive.getAtomicLong("myAtomicLongReactive")
 
         val setMono: Mono<Void> = myAtomicLong.set(newValue)
-        setMono.doOnNext {i -> println("setMono next i: $i")}
-            .doOnSuccess{i -> println("setMono success i: $i")}
-            .doOnError{e -> println("setMono error i: ${e.localizedMessage}")}
+        setMono.doOnNext { i -> println("setMono next i: $i") }
+            .doOnSuccess { i -> println("setMono success i: $i") }
+            .doOnError { e -> println("setMono error i: ${e.localizedMessage}") }
             .block()
 
         val getMono: Mono<Long> = myAtomicLong.get()
-        getMono.doOnNext {i -> println("getMono next i: $i")}
-            .doOnSuccess{i -> println("getMono success i: $i")}
-            .doOnError{e -> println("getMono error i: ${e.localizedMessage}")}
+        getMono.doOnNext { i -> println("getMono next i: $i") }
+            .doOnSuccess { i -> println("getMono success i: $i") }
+            .doOnError { e -> println("getMono error i: ${e.localizedMessage}") }
             .block();
 
         val igMono: Mono<Long> = myAtomicLong.incrementAndGet()
-        igMono.doOnNext {i -> println("igMono next i: $i")}
-            .doOnSuccess{i -> println("igMono success i: $i")}
-            .doOnError{e -> println("igMono error i: ${e.localizedMessage}")}
+        igMono.doOnNext { i -> println("igMono next i: $i") }
+            .doOnSuccess { i -> println("igMono success i: $i") }
+            .doOnError { e -> println("igMono error i: ${e.localizedMessage}") }
             .block()
     }
 
@@ -178,7 +178,7 @@ class App {
         keys.sorted().forEach { println(it) }
     }
 
-    private fun topic(redissonClient: RedissonClient, message: String){
+    private fun topic(redissonClient: RedissonClient, message: String) {
         printHelper("topic")
         val rTopic: RTopic = redissonClient.getTopic("myTopic")
         val listenerId = rTopic.addListener(String::class.java) { channel, msg ->
@@ -188,7 +188,7 @@ class App {
         rTopic.removeListener(listenerId)
     }
 
-    private fun collections(redissonClient: RedissonClient, key: String, value: String){
+    private fun collections(redissonClient: RedissonClient, key: String, value: String) {
         printHelper("collections")
         // Map
         val map: RMap<String, String> = redissonClient.getMap("myMap")
@@ -211,19 +211,19 @@ class App {
         // down below Set & List
     }
 
-    private fun set(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String){
+    private fun set(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String) {
         printHelper("set")
         val book = Book(pages, chapter, author)
         val rSet: RSet<Book> = redissonClient.getSet("book-set")
         rSet.add(book)
         rSet.readAll()
-        println( "book set contains $book: ${rSet.contains(book)}" )
+        println("book set contains $book: ${rSet.contains(book)}")
         rSet.remove(book)
         // more on distributed collection set
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#73-set
     }
 
-    private fun list(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String){
+    private fun list(redissonClient: RedissonClient, pages: Int, chapter: Int, author: String) {
         printHelper("list")
         val book = Book(pages, chapter, author)
         val ledgerList: RList<Book> = redissonClient.getList("myList")
@@ -235,7 +235,7 @@ class App {
         // https://github.com/redisson/redisson/wiki/7.-distributed-collections/#77-list
     }
 
-    private fun scripting(redissonClient: RedissonClient, value: String){
+    private fun scripting(redissonClient: RedissonClient, value: String) {
         printHelper("scripting")
         val bucketName = "myScriptingBucket"
         redissonClient.getBucket<String>(bucketName).set(value)
@@ -246,7 +246,7 @@ class App {
         println(result)
     }
 
-    private fun pipeline(redissonClient: RedissonClient, value1: Int, value2: Int, value3: Int, value4: Int){
+    private fun pipeline(redissonClient: RedissonClient, value1: Int, value2: Int, value3: Int, value4: Int) {
         printHelper("pipeline")
         val batch: RBatch = redissonClient.createBatch()
         val rf1: RFuture<Boolean>? = batch.getMap<Int, Int>("pipeline").fastPutAsync(value1, value2)
@@ -256,7 +256,7 @@ class App {
         rf2?.toCompletableFuture()?.thenApply { println("rf2 putAsync result: $it") }
     }
 
-    private fun multiLock(redissonClient: RedissonClient){
+    private fun multiLock(redissonClient: RedissonClient) {
         printHelper("multiLock")
         val lock1: RLock = redissonClient.getLock("l1")
         val lock2: RLock = redissonClient.getLock("l2")
@@ -274,8 +274,10 @@ class App {
         println("unlocked")
     }
 
-    private fun mapCache(redissonClient: RedissonClient, mapCacheName:String,
-                         key: String, value: String, expirationInMillis: Long){
+    private fun mapCache(
+        redissonClient: RedissonClient, mapCacheName: String,
+        key: String, value: String, expirationInMillis: Long
+    ) {
         printHelper("mapCache")
         val offset = expirationInMillis + 500
         val cache: RMapCache<String, String> = redissonClient.getMapCache(mapCacheName)
@@ -289,7 +291,7 @@ class App {
         cache.destroy();
     }
 
-    private fun remoteServiceServer(redissonClient: RedissonClient){
+    private fun remoteServiceServer(redissonClient: RedissonClient) {
         val remoteService: RRemoteService = redissonClient.remoteService
         val myTestImpl = MyTestImpl()
 
@@ -301,7 +303,7 @@ class App {
         remoteService.register(MyTestInterface::class.java, myTestImpl, 12)
     }
 
-    private fun remoteServiceClient(redissonClient: RedissonClient){
+    private fun remoteServiceClient(redissonClient: RedissonClient) {
         val remoteService: RRemoteService = redissonClient.getRemoteService()
         val myTest: MyTestInterface = remoteService.get(MyTestInterface::class.java)
         val value: String = myTest.doubleStr("foo")
@@ -312,30 +314,34 @@ class App {
         println("------------------------------")
         println("--- $content function output: ")
     }
+
     fun doRedisStuff(): Boolean {
-        val redisson = redissonClient()
-        return if (redisson != null) {
-            atomicLong(redisson, 3L)
-            atomicLongAsync(redisson, 3L)
-            atomicLongReactive(redisson, 3L)
-            atomicLongRXJava3(redisson, 3L)
-            Thread.sleep(1000) // wait for 1 second to complete RX operations
-            bucket(redisson, "foo", "bar") // buckets
-            `object`(redisson, 100, 10, "some author")
-            topic(redisson, "new message")
-            keys(redisson, "test1", "test2")
-            collections(redisson, "321", "value")
-            set(redisson, 42, 88, "icke")
-            list(redisson, 24, 33, "you")
-            scripting(redisson, "foo-bar")
-            pipeline(redisson, 1, 2, 3, 4)
-            multiLock(redisson)
-            mapCache(redisson, "cache", "cacheKey", "cache test value", 1000L)
-            redisson.shutdown()
-            true
-        } else {
-            println("Could not connect to REDIS. Please check the connection and if it running.")
-            false
+        return when (val redisson = redissonClient()) {
+            is RClient.Success -> {
+                atomicLong(redisson.redissonClient, 3L)
+                atomicLongAsync(redisson.redissonClient, 3L)
+                atomicLongReactive(redisson.redissonClient, 3L)
+                atomicLongRXJava3(redisson.redissonClient, 3L)
+                Thread.sleep(1000) // wait for 1 second to complete RX operations
+                bucket(redisson.redissonClient, "foo", "bar") // buckets
+                `object`(redisson.redissonClient, 100, 10, "some author")
+                topic(redisson.redissonClient, "new message")
+                keys(redisson.redissonClient, "test1", "test2")
+                collections(redisson.redissonClient, "321", "value")
+                set(redisson.redissonClient, 42, 88, "icke")
+                list(redisson.redissonClient, 24, 33, "you")
+                scripting(redisson.redissonClient, "foo-bar")
+                pipeline(redisson.redissonClient, 1, 2, 3, 4)
+                multiLock(redisson.redissonClient)
+                mapCache(redisson.redissonClient, "cache", "cacheKey", "cache test value", 1000L)
+                redisson.redissonClient.shutdown()
+                true
+            }
+
+            is RClient.Failure -> {
+                println("Could not connect to REDIS. Please check the connection and if it running.")
+                false
+            }
         }
     }
 }
