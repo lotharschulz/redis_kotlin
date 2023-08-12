@@ -91,8 +91,34 @@ class App {
         println("myAtomicLong after unlink/cleanup: $myAtomicLong")
     }
 
-    // todo: wrap into coroutines
-
+    private fun atomicLongCoroutines(redisson: RedissonClient, newValue: Long) {
+        printHelper("atomicLong corountines")
+        val myAtomicLong: RAtomicLong = redisson.getAtomicLong("myAtomicLongCoRoutine")
+        println("initial myAtomicLong: $myAtomicLong")
+    
+        val job = GlobalScope.launch {
+            for (i in 1..7) {
+                myAtomicLong.incrementAndGet()
+                println("myAtomicLong after increment and set: $myAtomicLong (loop run # $i)")
+            }
+        }
+        // Waiting for the increments to finish
+        job.join()
+        
+        val jobs = mutableListOf<Job>()
+        repeat(1) {
+            jobs.add(GlobalScope.launch {
+                myAtomicLong.get()
+                println("myAtomicLong after get: $myAtomicLong")
+            })
+        }
+    
+        // Waiting for the jobs to finish
+        jobs.joinAll()
+        myAtomicLong.unlink() // clean up, happens async
+        println("myAtomicLong after unlink/cleanup: $myAtomicLong")
+    }
+    
     private fun atomicLongReactive(redisson: RedissonClient, newValue: Long) {
         printHelper("atomicLong reactive interface")
         val redissonReactive: RedissonReactiveClient = redisson.reactive()
