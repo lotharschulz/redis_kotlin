@@ -299,15 +299,20 @@ class App {
         println("unlocked")
     }
 
-    private suspend fun coroutinesLock(redissonClient: RedissonClient) {
+    private suspend fun coroutinesLock(redissonClient: RedissonClient, range: IntProgression = (1 until 5)) {
         printHelper("coroutinesLock")
         val delayTime: Long = 1000L
 
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        (1..5).map { entry ->
+        range.map { entry -> // @TODO: with v1.9 use range until:
+            // https://www.lotharschulz.info/2022/10/03/setup-new-kotlin-range-operator-rangeuntil/
+            // https://github.com/lotharschulz/redis_kotlin/issues/19
             scope.launch(CoroutineIdentifier(identifier = entry.toLong())) {
                 val lock = redissonClient.getLock("l$entry")
                 val id = currentCoroutineContext().get(CoroutineIdentifier.CoroutineKey)?.identifier!!
+                // @TODO:
+                // sealed class for identifier ->> success and error cases
+                // only in success case ->> lock, else message
                 lock.lockAsync(id).toCompletableFuture().join()
                 try {
                     println("lock acquired")
