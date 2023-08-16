@@ -1,5 +1,6 @@
 package redis_kotlin
 
+import CoroutineIdentifier
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
 import kotlinx.coroutines.*
@@ -296,6 +297,27 @@ class App {
         Thread.sleep(1000)
         lock.unlock()
         println("unlocked")
+    }
+
+    private suspend fun coroutinesLock(redissonClient: RedissonClient) {
+        printHelper("coroutinesLock")
+        val delayTime: Long = 1000L
+
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        (1..5).map { entry ->
+            scope.launch(CoroutineIdentifier(identifier = entry.toLong())) {
+                val lock = redissonClient.getLock("l$entry")
+                val id = currentCoroutineContext().get(CoroutineIdentifier.CoroutineKey)?.identifier!!
+                lock.lockAsync(id).toCompletableFuture().join()
+                try {
+                    println("lock acquired")
+                    delay(delayTime)
+                } finally {
+                    lock.unlockAsync().toCompletableFuture().join()
+                    println("lock released")
+                }
+            }
+        }.joinAll()
     }
 
     private fun mapCache(
