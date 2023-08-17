@@ -134,7 +134,7 @@ class App {
         )
     }
 
-    private suspend fun atomicLongCoroutines(redisson: RedissonClient, newValue: Long) {
+    private suspend fun atomicLongCoroutines(redisson: RedissonClient) {
         printHelper("atomicLong corountines")
         val myAtomicLong: RAtomicLong = redisson.getAtomicLong("myAtomicLongCoRoutine")
         println("initial myAtomicLong: $myAtomicLong")
@@ -309,17 +309,16 @@ class App {
             // https://github.com/lotharschulz/redis_kotlin/issues/19
             scope.launch(CoroutineIdentifier(identifier = entry.toLong())) {
                 val lock = redissonClient.getLock("l$entry")
-                val id = currentCoroutineContext().get(CoroutineIdentifier.CoroutineKey)?.identifier!!
-                // @TODO:
-                // sealed class for identifier ->> success and error cases
-                // only in success case ->> lock, else message
-                lock.lockAsync(id).toCompletableFuture().join()
-                try {
-                    println("lock acquired")
-                    delay(delayTime)
-                } finally {
-                    lock.unlockAsync().toCompletableFuture().join()
-                    println("lock released")
+                val id:Long? = currentCoroutineContext()[CoroutineIdentifier.CoroutineKey]?.identifier
+                if (null != id) {
+                    lock.lockAsync(id).toCompletableFuture().join()
+                    try {
+                        println("lock acquired")
+                        delay(delayTime)
+                    } finally {
+                        lock.unlockAsync().toCompletableFuture().join()
+                        println("lock released")
+                    }
                 }
             }
         }.joinAll()
@@ -369,25 +368,28 @@ class App {
     fun doRedisStuff(): Boolean {
         return when (val redisson = redissonClient()) {
             is RClient.Success -> {
-                atomicLong(redisson.redissonClient, 3L)
-                atomicLongAsync(redisson.redissonClient, 3L)
-                atomicLongReactive(redisson.redissonClient, 3L)
-                atomicLongRXJava3(redisson.redissonClient, 3L)
-                Thread.sleep(1000) // wait for 1 second to complete RX operations
+//                atomicLong(redisson.redissonClient, 3L)
+//                atomicLongAsync(redisson.redissonClient, 3L)
+//                atomicLongReactive(redisson.redissonClient, 3L)
+//                atomicLongRXJava3(redisson.redissonClient, 3L)
+//                Thread.sleep(1000) // wait for 1 second to complete RX operations
+//                runBlocking {
+//                    atomicLongCoroutines(redisson.redissonClient)
+//                }
+//                bucket(redisson.redissonClient, "foo", "bar") // buckets
+//                `object`(redisson.redissonClient, 100, 10, "some author")
+//                topic(redisson.redissonClient, "new message")
+//                keys(redisson.redissonClient, "test1", "test2")
+//                collections(redisson.redissonClient, "321", "value")
+//                set(redisson.redissonClient, 42, 88, "icke")
+//                list(redisson.redissonClient, 24, 33, "you")
+//                scripting(redisson.redissonClient, "foo-bar")
+//                pipeline(redisson.redissonClient, 1, 2, 3, 4)
+//                multiLock(redisson.redissonClient)
                 runBlocking {
-                    atomicLongCoroutines(redisson.redissonClient, 3L)
+                    coroutinesLock(redisson.redissonClient)
                 }
-                bucket(redisson.redissonClient, "foo", "bar") // buckets
-                `object`(redisson.redissonClient, 100, 10, "some author")
-                topic(redisson.redissonClient, "new message")
-                keys(redisson.redissonClient, "test1", "test2")
-                collections(redisson.redissonClient, "321", "value")
-                set(redisson.redissonClient, 42, 88, "icke")
-                list(redisson.redissonClient, 24, 33, "you")
-                scripting(redisson.redissonClient, "foo-bar")
-                pipeline(redisson.redissonClient, 1, 2, 3, 4)
-                multiLock(redisson.redissonClient)
-                mapCache(redisson.redissonClient, "cache", "cacheKey", "cache test value", 1000L)
+//                mapCache(redisson.redissonClient, "cache", "cacheKey", "cache test value", 1000L)
                 redisson.redissonClient.shutdown()
                 true
             }
