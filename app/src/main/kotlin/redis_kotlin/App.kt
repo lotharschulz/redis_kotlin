@@ -303,7 +303,6 @@ class App {
     private suspend fun coroutinesLock(redissonClient: RedissonClient, range: IntProgression = (1 until 5)) {
         printHelper("coroutinesLock")
         val delayTime: Long = 1000L
-//@TODO: hier weiter
         val redissonReactive: RedissonReactiveClient = redissonClient.reactive()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         range.map { entry -> // @TODO: with v1.9 use range until:
