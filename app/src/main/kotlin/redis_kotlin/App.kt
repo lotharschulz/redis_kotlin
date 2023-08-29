@@ -300,14 +300,12 @@ class App {
         println("unlocked")
     }
 
-    private suspend fun coroutinesLock(redissonClient: RedissonClient, range: IntProgression = (1 until 5)) {
+    private suspend fun coroutinesLock(redissonClient: RedissonClient, range: IntProgression = 1 ..< 5) {
         printHelper("coroutinesLock")
         val delayTime: Long = 1000L
         val redissonReactive: RedissonReactiveClient = redissonClient.reactive()
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        range.map { entry -> // @TODO: with v1.9 use range until:
-            // https://www.lotharschulz.info/2022/10/03/setup-new-kotlin-range-operator-rangeuntil/
-            // https://github.com/lotharschulz/redis_kotlin/issues/19
+        range.map { entry ->
             scope.launch(CoroutineIdentifier(identifier = entry.toLong())) {
                 val lock = redissonReactive.getLock("l$entry")
                 val id:Long? = currentCoroutineContext()[CoroutineIdentifier.CoroutineKey]?.identifier
