@@ -1,7 +1,9 @@
 package redis_kotlin
 
+import CoroutineIdentifier
 import io.reactivex.rxjava3.core.Completable
 import io.reactivex.rxjava3.core.Single
+import kotlinx.coroutines.*
 import org.redisson.Redisson
 import org.redisson.RedissonMultiLock
 import org.redisson.api.*
@@ -10,8 +12,6 @@ import org.redisson.config.Config
 import reactor.core.publisher.Mono
 import java.io.Serializable
 import java.time.Duration;
-import java.util.concurrent.TimeUnit
-
 
 data class Book(val pages: Int, val chapter: Int, val author: String) : Serializable
 
@@ -90,9 +90,7 @@ class App {
         myAtomicLong.unlink() // clean up, happens async
         println("myAtomicLong after unlink/cleanup: $myAtomicLong")
     }
-
-    // todo: wrap into coroutines
-
+    
     private fun atomicLongReactive(redisson: RedissonClient, newValue: Long) {
         printHelper("atomicLong reactive interface")
         val redissonReactive: RedissonReactiveClient = redisson.reactive()
@@ -134,6 +132,33 @@ class App {
             { i -> println("igMono: $i") },
             { e -> println("igMono error: ${e.localizedMessage}") }
         )
+    }
+
+    private suspend fun atomicLongCoroutines(redisson: RedissonClient) {
+        printHelper("atomicLong corountines")
+        val myAtomicLong: RAtomicLong = redisson.getAtomicLong("myAtomicLongCoRoutine")
+        println("initial myAtomicLong: $myAtomicLong")
+
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        val incAndGetJob = scope.launch {
+            for (i in 1..7) {
+                myAtomicLong.incrementAndGet()
+                println("myAtomicLong after increment and set: $myAtomicLong (loop run # $i)")
+            }
+        }
+        // Waiting for the increments & gets to finish
+        incAndGetJob.join()
+
+        val getJob = scope.launch {
+            myAtomicLong.get()
+            println("myAtomicLong after get: $myAtomicLong")
+        }
+
+        // Waiting for the get job to finish
+        getJob.join()
+
+        myAtomicLong.unlink() // clean up, happens async
+        println("myAtomicLong after unlink/cleanup: $myAtomicLong")
     }
 
     private fun bucket(redissonClient: RedissonClient, bucketName: String, value: String) {
@@ -254,6 +279,7 @@ class App {
         batch.execute()
         rf1?.toCompletableFuture()?.thenApply { println("rf1 fastPutAsync result: $it") }
         rf2?.toCompletableFuture()?.thenApply { println("rf2 putAsync result: $it") }
+        // @TODO: dbl check
     }
 
     private fun multiLock(redissonClient: RedissonClient) {
@@ -272,6 +298,31 @@ class App {
         Thread.sleep(1000)
         lock.unlock()
         println("unlocked")
+    }
+
+    private suspend fun coroutinesLock(redissonClient: RedissonClient, range: IntProgression = (1 until 5)) {
+        printHelper("coroutinesLock")
+        val delayTime: Long = 1000L
+        val redissonReactive: RedissonReactiveClient = redissonClient.reactive()
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        range.map { entry -> // @TODO: with v1.9 use range until:
+            // https://www.lotharschulz.info/2022/10/03/setup-new-kotlin-range-operator-rangeuntil/
+            // https://github.com/lotharschulz/redis_kotlin/issues/19
+            scope.launch(CoroutineIdentifier(identifier = entry.toLong())) {
+                val lock = redissonReactive.getLock("l$entry")
+                val id:Long? = currentCoroutineContext()[CoroutineIdentifier.CoroutineKey]?.identifier
+                if (null != id) {
+                    lock.lock(id)
+                    try {
+                        println("lock(id: $id) acquired")
+                        delay(delayTime)
+                    } finally {
+                        lock.unlock(id)
+                        println("lock(id: $id) released")
+                    }
+                }
+            }
+        }.joinAll()
     }
 
     private fun mapCache(
@@ -323,6 +374,9 @@ class App {
                 atomicLongReactive(redisson.redissonClient, 3L)
                 atomicLongRXJava3(redisson.redissonClient, 3L)
                 Thread.sleep(1000) // wait for 1 second to complete RX operations
+                runBlocking {
+                    atomicLongCoroutines(redisson.redissonClient)
+                }
                 bucket(redisson.redissonClient, "foo", "bar") // buckets
                 `object`(redisson.redissonClient, 100, 10, "some author")
                 topic(redisson.redissonClient, "new message")
@@ -333,6 +387,9 @@ class App {
                 scripting(redisson.redissonClient, "foo-bar")
                 pipeline(redisson.redissonClient, 1, 2, 3, 4)
                 multiLock(redisson.redissonClient)
+                runBlocking {
+                    coroutinesLock(redisson.redissonClient)
+                }
                 mapCache(redisson.redissonClient, "cache", "cacheKey", "cache test value", 1000L)
                 redisson.redissonClient.shutdown()
                 true
