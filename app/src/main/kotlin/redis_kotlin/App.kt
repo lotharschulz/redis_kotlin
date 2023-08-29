@@ -361,9 +361,10 @@ class App {
         println("value: $value")
     }
 
-    private fun printHelper(content: String) {
+    fun printHelper(content: String): Boolean {
         println("------------------------------")
         println("--- $content function output: ")
+        return true
     }
 
     fun doRedisStuff(): Boolean {
